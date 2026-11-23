@@ -42,6 +42,7 @@ export interface SageOAuthConfig {
   authorizeUrl?: string;
   tokenPath?: string;
   scope?: string;
+  country?: string;
 }
 
 export const DEFAULT_SAGE_OAUTH_URL = "https://oauth.accounting.sage.com/token";
@@ -66,7 +67,10 @@ export function buildAuthorizationUrl(config: SageOAuthConfig, state?: string): 
   u.searchParams.set("client_id", config.clientId);
   u.searchParams.set("redirect_uri", config.callbackUrl);
   u.searchParams.set("scope", config.scope ?? "full_access");
-  u.searchParams.set("country", "gb");
+  const country = config.country ?? process.env.SAGE_COUNTRY;
+  if (country) {
+    u.searchParams.set("country", country);
+  }
   if (state) {
     u.searchParams.set("state", state);
   }

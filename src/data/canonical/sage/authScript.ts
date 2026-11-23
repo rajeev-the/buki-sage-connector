@@ -113,6 +113,7 @@ async function run(): Promise<void> {
     callbackUrl: sageConfig.callbackUrl,
     oauthUrl: sageConfig.oauthUrl,
     scope: process.env.SAGE_SCOPE || "full_access",
+    country: process.env.SAGE_COUNTRY,
   };
 
   const callbackUrl = new URL(sageConfig.callbackUrl);
