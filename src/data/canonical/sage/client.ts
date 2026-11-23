@@ -9,7 +9,7 @@
  * - Returns raw wire shapes only; canonical transformation lives in normalize.ts.
  */
 
-import { getValidAccessToken, type SageOAuthConfig, DEFAULT_TOKEN_FILE } from "./auth";
+import { getValidAccessToken, loadTokens, refreshTokens, type SageOAuthConfig, DEFAULT_TOKEN_FILE } from "./auth";
 import type {
   SageBankAccount,
   SageBankTransfer,
@@ -45,10 +45,15 @@ export interface SageConfig {
   callbackUrl: string;
   businessId?: string;
   tokenPath?: string;
+  maxRetries?: number;
+  retryBaseDelayMs?: number;
 }
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_PAGE_SIZE = 100;
+const MAX_RETRIES = 3;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): SageConfig {
   const clientId = env.SAGE_CLIENT_ID;
@@ -58,6 +63,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): SageConfig 
   const callbackUrl = env.SAGE_CALLBACK_URL ?? "http://localhost:3000/api/sage/callback";
   const businessId = env.SAGE_BUSINESS_ID?.trim() || undefined;
   const tokenPath = env.SAGE_TOKEN_PATH || DEFAULT_TOKEN_FILE;
+  const retryBaseDelayMs = env.SAGE_RETRY_BASE_DELAY_MS !== undefined ? Number(env.SAGE_RETRY_BASE_DELAY_MS) : undefined;
 
   if (!clientId || !clientSecret) {
     throw new SageError("config", "SAGE_CLIENT_ID and SAGE_CLIENT_SECRET must be set in .env");
@@ -71,6 +77,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): SageConfig 
     callbackUrl,
     businessId,
     tokenPath,
+    retryBaseDelayMs,
   };
 }
 
@@ -101,59 +108,110 @@ export class SageClient {
   }
 
   async get<T>(pathOrUrl: string, query?: Record<string, string>): Promise<T> {
-    const token = await this.getAccessToken();
     const url = this.resolveUrl(pathOrUrl, query);
+    let refreshedOn401 = false;
+    const maxRetries = this.config.maxRetries ?? MAX_RETRIES;
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    };
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      let token = await this.getAccessToken();
 
-    if (this.config.businessId && !url.includes("/businesses")) {
-      headers["X-Business"] = this.config.businessId;
-    }
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      };
 
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        headers,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-    } catch (err) {
-      if (err instanceof Error && err.name === "TimeoutError") {
-        throw new SageError("timeout", `Sage did not answer ${pathOrUrl} within ${REQUEST_TIMEOUT_MS / 1000}s`);
+      if (this.config.businessId && !url.includes("/businesses")) {
+        headers["X-Business"] = this.config.businessId;
       }
-      throw new SageError("network", `Could not reach Sage API: ${describe(err)}`);
-    }
 
-    if (res.status === 401 || res.status === 403) {
-      throw new SageError("auth", `Sage rejected the token or access was denied (HTTP ${res.status})`, res.status);
-    }
-
-    if (res.status === 429) {
-      const retryAfter = res.headers.get("retry-after") ?? "rate limit reached";
-      throw new SageError("http", `Sage rate limit reached (HTTP 429, retry-after: ${retryAfter})`, 429);
-    }
-
-    if (!res.ok) {
-      let bodyText = "";
+      let res: Response;
       try {
-        bodyText = await res.text();
-      } catch {
-        // ignore
+        res = await fetch(url, {
+          headers,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+      } catch (err) {
+        const isTimeout = err instanceof Error && err.name === "TimeoutError";
+        if (attempt < maxRetries - 1) {
+          const delay = Math.min((this.config.retryBaseDelayMs ?? 150) * Math.pow(2, attempt), 2000);
+          await sleep(delay);
+          continue;
+        }
+        if (isTimeout) {
+          throw new SageError("timeout", `Sage did not answer ${pathOrUrl} within ${REQUEST_TIMEOUT_MS / 1000}s`);
+        }
+        throw new SageError("network", `Could not reach Sage API: ${describe(err)}`);
       }
-      throw new SageError(
-        "http",
-        `Sage answered ${pathOrUrl} with HTTP ${res.status}${bodyText ? `: ${bodyText}` : ""}`,
-        res.status,
-      );
+
+      // Proactive 401 handling: refresh token and retry once if possible
+      if (res.status === 401 && !refreshedOn401) {
+        refreshedOn401 = true;
+        try {
+          const oauthConfig: SageOAuthConfig = {
+            clientId: this.config.clientId,
+            clientSecret: this.config.clientSecret,
+            callbackUrl: this.config.callbackUrl,
+            oauthUrl: this.config.oauthUrl,
+          };
+          const existing = await loadTokens(this.config.tokenPath);
+          if (existing?.refresh_token) {
+            await refreshTokens(existing.refresh_token, oauthConfig, this.config.tokenPath);
+            continue;
+          }
+        } catch {
+          // If refresh fails, fall through to auth error
+        }
+        throw new SageError("auth", `Sage rejected the token or access was denied (HTTP 401)`, 401);
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        throw new SageError("auth", `Sage rejected the token or access was denied (HTTP ${res.status})`, res.status);
+      }
+
+      // Rate limiting: check retry-after header and back off
+      if (res.status === 429) {
+        if (attempt < maxRetries - 1) {
+          const retryHeader = res.headers.get("retry-after");
+          const retrySec = retryHeader ? Number(retryHeader) : NaN;
+          const waitMs = this.config.retryBaseDelayMs !== undefined
+            ? this.config.retryBaseDelayMs
+            : (!Number.isNaN(retrySec) && retrySec > 0 ? Math.min(retrySec * 1000, 5000) : 250 * Math.pow(2, attempt));
+          await sleep(waitMs);
+          continue;
+        }
+        const retryAfter = res.headers.get("retry-after") ?? "rate limit reached";
+        throw new SageError("http", `Sage rate limit reached (HTTP 429, retry-after: ${retryAfter})`, 429);
+      }
+
+      // Transient server errors (500, 502, 503, 504): backoff and retry
+      if (res.status >= 500 && attempt < maxRetries - 1) {
+        const delay = Math.min((this.config.retryBaseDelayMs ?? 200) * Math.pow(2, attempt), 2000);
+        await sleep(delay);
+        continue;
+      }
+
+      if (!res.ok) {
+        let bodyText = "";
+        try {
+          bodyText = await res.text();
+        } catch {
+          // ignore
+        }
+        throw new SageError(
+          "http",
+          `Sage answered ${pathOrUrl} with HTTP ${res.status}${bodyText ? `: ${bodyText}` : ""}`,
+          res.status,
+        );
+      }
+
+      try {
+        return (await res.json()) as T;
+      } catch {
+        throw new SageError("shape", `Sage answered ${pathOrUrl} with non-JSON response`);
+      }
     }
 
-    try {
-      return (await res.json()) as T;
-    } catch {
-      throw new SageError("shape", `Sage answered ${pathOrUrl} with non-JSON response`);
-    }
+    throw new SageError("http", `Failed to get response from ${pathOrUrl} after ${MAX_RETRIES} attempts`);
   }
 
   /**

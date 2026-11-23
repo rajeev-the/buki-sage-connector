@@ -16,6 +16,7 @@ describe("Sage Client", () => {
     callbackUrl: "http://localhost:3000/api/sage/callback",
     businessId: "biz-123",
     tokenPath: testTokenPath,
+    retryBaseDelayMs: 0,
   };
 
   beforeEach(async () => {
@@ -137,5 +138,26 @@ describe("Sage Client", () => {
     await expect(client.get("/ledger_accounts")).rejects.toMatchObject({
       kind: "timeout",
     });
+  });
+
+  it("retries on transient HTTP 500 and succeeds on subsequent attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => "Internal server error",
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ $items: [{ id: "acc-1" }] }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new SageClient(baseConfig);
+    const data = await client.get<{ $items: Array<{ id: string }> }>("/ledger_accounts");
+
+    expect(data.$items).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

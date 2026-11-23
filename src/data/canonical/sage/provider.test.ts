@@ -25,6 +25,7 @@ describe("Sage Provider", () => {
     process.env.SAGE_CLIENT_SECRET = "test-secret";
     process.env.SAGE_BUSINESS_ID = "biz-123";
     process.env.SAGE_TOKEN_PATH = testTokenPath;
+    process.env.SAGE_RETRY_BASE_DELAY_MS = "0";
   });
 
   afterEach(async () => {

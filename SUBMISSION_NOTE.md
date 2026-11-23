@@ -56,3 +56,31 @@ The connector pulls four core canonical collections from Sage Accounting API v3.
 
 - Clarified Sage Accounting UK v3.1 API endpoint conventions for banking movements (transfers vs contact payments vs other payments) and confirmed canonical `bankAccountId` points to the `LedgerAccount` of the bank account.
 - Confirmed handling of VAT vs Net in `InvoiceLine`: lines store `net_amount` for expense analytics, while invoice totals preserve gross amounts for cash and debtor tracking.
+
+## 5-Minute Demonstration Plan
+
+1. **Setup & Verification (0:00 - 1:00)**
+   - Show environment configuration in `.env` (`FINANCE_SOURCE=sage`, `SAGE_BASE_URL`, `SAGE_BUSINESS_ID`).
+   - Start the mock Sage server: `npm run mock:sage` (or authorize real Sage with `npm run sage:auth`).
+   - Run `npm run health` to demonstrate active provider connectivity.
+
+2. **Initial Sync & Store Inspection (1:00 - 2:00)**
+   - Run `npm run sync`.
+   - Highlight the console output: `finance/sage: pulled 32, added 32, changed 0, removed 0`.
+   - Inspect `.data/store.json` to show normalized records without defaulted values.
+
+3. **Finance Module & Financial Questions (2:00 - 3:30)**
+   - Run `npm run show -- finance`: show cash per bank account, invoiced totals, overdue receivables table, and customer rankings.
+   - Run the two core evaluation questions:
+     - `npm run ask -- "who owes us money"`: highlights overdue invoices ($12,000 overdue; 1 invoice with no due date honestly omitted).
+     - `npm run ask -- "what did we spend on software last month"`: highlights $2,350 from purchase invoice lines.
+     - `npm run ask -- "how much cash do we have"`: highlights $253,615 cash across Operating and Reserve accounts.
+
+4. **Change Detection & Scheduled Sync (3:30 - 4:30)**
+   - Start scheduler loop: `npm run cron`.
+   - In Sage (or in `mock/sage/data/sage.json`), edit an invoice (e.g., mark an invoice paid or alter line item).
+   - Show the next scheduled tick detecting the update: `changed: 1`.
+   - Re-run `npm run ask -- "who owes us money"` to show the live answer updated instantly.
+
+5. **Test Suite Verification (4:30 - 5:00)**
+   - Run `npm test && npm run typecheck` to show 100% passing tests (55 tests) and zero TypeScript errors.

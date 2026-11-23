@@ -65,12 +65,14 @@ export async function loadTokens(tokenPath = DEFAULT_TOKEN_FILE): Promise<SageTo
 }
 
 /**
- * Saves tokens to disk, ensuring the parent directory exists.
+ * Saves tokens to disk atomically, ensuring the parent directory exists.
  */
 export async function saveTokens(tokens: SageTokenData, tokenPath = DEFAULT_TOKEN_FILE): Promise<void> {
   const dir = dirname(tokenPath);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(tokenPath, JSON.stringify(tokens, null, 2), "utf8");
+  const tmpPath = `${tokenPath}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+  await fs.writeFile(tmpPath, JSON.stringify(tokens, null, 2), "utf8");
+  await fs.rename(tmpPath, tokenPath);
 }
 
 /**
@@ -151,6 +153,9 @@ export async function refreshTokens(
 
   if (!res.ok) {
     const errorText = await res.text();
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      throw new Error(`Sage refresh token expired or revoked (HTTP ${res.status}): ${errorText}. Please run 'npm run sage:auth' to re-authorize.`);
+    }
     throw new Error(`Sage token refresh failed (HTTP ${res.status}): ${errorText}`);
   }
 
