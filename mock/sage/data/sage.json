@@ -1,0 +1,566 @@
+{
+  "businesses": [
+    {
+      "id": "halden-labs-uk",
+      "name": "Halden Labs (UK)",
+      "displayed_as": "Halden Labs (UK)"
+    }
+  ],
+  "ledger_accounts": [
+    {
+      "id": "acc-1200",
+      "nominal_code": 1200,
+      "name": "Operating account",
+      "ledger_account_type": {
+        "id": "bank",
+        "displayed_as": "Bank"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-1210",
+      "nominal_code": 1210,
+      "name": "Reserve account",
+      "ledger_account_type": {
+        "id": "bank",
+        "displayed_as": "Bank"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-1100",
+      "nominal_code": 1100,
+      "name": "Trade debtors",
+      "ledger_account_type": {
+        "id": "current_assets",
+        "displayed_as": "Current Assets"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-2100",
+      "nominal_code": 2100,
+      "name": "Trade creditors",
+      "ledger_account_type": {
+        "id": "current_liabilities",
+        "displayed_as": "Current Liabilities"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-3000",
+      "nominal_code": 3000,
+      "name": "Share capital",
+      "ledger_account_type": {
+        "id": "equity",
+        "displayed_as": "Equity"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-4000",
+      "nominal_code": 4000,
+      "name": "Sales",
+      "ledger_account_type": {
+        "id": "sales",
+        "displayed_as": "Sales"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-5000",
+      "nominal_code": 5000,
+      "name": "Contractors",
+      "ledger_account_type": {
+        "id": "expenses",
+        "displayed_as": "Expenses"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-7100",
+      "nominal_code": 7100,
+      "name": "Rent",
+      "ledger_account_type": {
+        "id": "expenses",
+        "displayed_as": "Expenses"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "acc-7500",
+      "nominal_code": 7500,
+      "name": "Software subscriptions",
+      "ledger_account_type": {
+        "id": "expenses",
+        "displayed_as": "Expenses"
+      },
+      "updated_at": "2026-01-05T09:00:00Z"
+    }
+  ],
+  "bank_accounts": [
+    {
+      "id": "bank-1200",
+      "account_name": "Operating account",
+      "ledger_account": {
+        "id": "acc-1200",
+        "displayed_as": "1200 - Operating account"
+      },
+      "currency": {
+        "id": "USD",
+        "displayed_as": "US Dollar"
+      },
+      "balance": 63520,
+      "updated_at": "2026-01-05T09:00:00Z"
+    },
+    {
+      "id": "bank-1210",
+      "account_name": "Reserve account",
+      "ledger_account": {
+        "id": "acc-1210",
+        "displayed_as": "1210 - Reserve account"
+      },
+      "currency": {
+        "id": "USD",
+        "displayed_as": "US Dollar"
+      },
+      "balance": 190095,
+      "updated_at": "2026-01-05T09:00:00Z"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "con-2001",
+      "name": "Northgate Analytics",
+      "contact_type_ids": [
+        "CUSTOMER"
+      ],
+      "email": "accounts@northgate.example",
+      "updated_at": "2026-03-11T15:20:00Z"
+    },
+    {
+      "id": "con-2002",
+      "name": "Pinecrest Health",
+      "contact_type_ids": [
+        "CUSTOMER"
+      ],
+      "email": "payables@pinecrest.example",
+      "updated_at": "2026-05-02T10:45:00Z"
+    },
+    {
+      "id": "con-2003",
+      "name": "Tolliver & Reed LLP",
+      "contact_type_ids": [
+        "CUSTOMER"
+      ],
+      "updated_at": "2026-08-19T13:05:00Z"
+    },
+    {
+      "id": "con-2004",
+      "name": "Ovelo Cloud",
+      "contact_type_ids": [
+        "VENDOR"
+      ],
+      "email": "billing@ovelo.example",
+      "updated_at": "2026-02-24T08:30:00Z"
+    },
+    {
+      "id": "con-2005",
+      "name": "Bluestem Workspace",
+      "contact_type_ids": [
+        "VENDOR"
+      ],
+      "email": "invoices@bluestem.example",
+      "updated_at": "2026-01-12T11:00:00Z"
+    }
+  ],
+  "sales_invoices": [
+    {
+      "id": "si-3001",
+      "invoice_number": "SI-3001",
+      "contact": {
+        "id": "con-2001",
+        "name": "Northgate Analytics"
+      },
+      "date": "2026-09-04",
+      "due_date": "2026-10-04",
+      "status": {
+        "id": "PAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 18000,
+      "outstanding_amount": 0,
+      "invoice_lines": [
+        {
+          "description": "Platform licence, Q3 2026",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 18000
+        }
+      ],
+      "updated_at": "2026-10-06T16:40:00Z"
+    },
+    {
+      "id": "si-3002",
+      "invoice_number": "SI-3002",
+      "contact": {
+        "id": "con-2002",
+        "name": "Pinecrest Health"
+      },
+      "date": "2026-09-15",
+      "due_date": "2026-10-15",
+      "status": {
+        "id": "UNPAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 9500,
+      "outstanding_amount": 9500,
+      "invoice_lines": [
+        {
+          "description": "Implementation, September",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 9500
+        }
+      ],
+      "updated_at": "2026-09-15T09:12:00Z"
+    },
+    {
+      "id": "si-3003",
+      "invoice_number": "SI-3003",
+      "contact": {
+        "id": "con-2003",
+        "name": "Tolliver & Reed LLP"
+      },
+      "date": "2026-09-22",
+      "due_date": "2026-10-22",
+      "status": {
+        "id": "PART_PAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 6000,
+      "outstanding_amount": 2500,
+      "invoice_lines": [
+        {
+          "description": "Reporting module, annual",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 6000
+        }
+      ],
+      "updated_at": "2026-10-23T14:02:00Z"
+    },
+    {
+      "id": "si-3004",
+      "invoice_number": "SI-3004",
+      "contact": {
+        "id": "con-2002",
+        "name": "Pinecrest Health"
+      },
+      "date": "2026-10-06",
+      "due_date": "2026-11-05",
+      "status": {
+        "id": "DRAFT"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 7500,
+      "outstanding_amount": 7500,
+      "invoice_lines": [
+        {
+          "description": "Implementation, October",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 7500
+        }
+      ],
+      "updated_at": "2026-10-06T17:55:00Z"
+    },
+    {
+      "id": "si-3005",
+      "invoice_number": "SI-3005",
+      "contact": {
+        "id": "con-2001",
+        "name": "Northgate Analytics"
+      },
+      "date": "2026-10-13",
+      "due_date": "2026-11-12",
+      "void": true,
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 4000,
+      "outstanding_amount": 0,
+      "invoice_lines": [
+        {
+          "description": "Training day, raised in error",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 4000
+        }
+      ],
+      "updated_at": "2026-10-14T08:20:00Z"
+    },
+    {
+      "id": "si-3006",
+      "invoice_number": "SI-3006",
+      "contact": {
+        "id": "con-2001",
+        "name": "Northgate Analytics"
+      },
+      "date": "2026-10-20",
+      "status": {
+        "id": "UNPAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 12000,
+      "outstanding_amount": 12000,
+      "invoice_lines": [
+        {
+          "description": "Platform licence, Q4 2026",
+          "ledger_account": {
+            "id": "acc-4000"
+          },
+          "net_amount": 12000
+        }
+      ],
+      "updated_at": "2026-10-20T10:30:00Z"
+    }
+  ],
+  "purchase_invoices": [
+    {
+      "id": "pi-3101",
+      "invoice_number": "BW-0926",
+      "contact": {
+        "id": "con-2005",
+        "name": "Bluestem Workspace"
+      },
+      "date": "2026-09-01",
+      "due_date": "2026-09-30",
+      "status": {
+        "id": "PAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 8800,
+      "outstanding_amount": 0,
+      "invoice_lines": [
+        {
+          "description": "Office rent, September 2026",
+          "ledger_account": {
+            "id": "acc-7100"
+          },
+          "net_amount": 8500
+        },
+        {
+          "description": "Meeting room booking add-on",
+          "ledger_account": {
+            "id": "acc-7500"
+          },
+          "net_amount": 300
+        }
+      ],
+      "updated_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": "pi-3102",
+      "invoice_number": "OV-44817",
+      "contact": {
+        "id": "con-2004",
+        "name": "Ovelo Cloud"
+      },
+      "date": "2026-10-03",
+      "due_date": "2026-11-02",
+      "status": {
+        "id": "UNPAID"
+      },
+      "currency": {
+        "id": "USD"
+      },
+      "total_amount": 2350,
+      "outstanding_amount": 2350,
+      "invoice_lines": [
+        {
+          "description": "Cloud hosting, September usage",
+          "ledger_account": {
+            "id": "acc-7500"
+          },
+          "net_amount": 1900
+        },
+        {
+          "description": "Monitoring, 12 seats",
+          "ledger_account": {
+            "id": "acc-7500"
+          },
+          "net_amount": 450
+        }
+      ],
+      "updated_at": "2026-10-03T07:45:00Z"
+    }
+  ],
+  "bank_transactions": [
+    {
+      "id": "bt-5001",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-09-01",
+      "amount": -8800,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Bluestem Workspace, invoice BW-0926",
+      "contact": {
+        "id": "con-2005"
+      },
+      "updated_at": "2026-09-01T12:05:00Z"
+    },
+    {
+      "id": "bt-5002",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-09-12",
+      "amount": -4500,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Contractor, design sprint",
+      "ledger_account": {
+        "id": "acc-5000"
+      },
+      "updated_at": "2026-09-12T16:10:00Z"
+    },
+    {
+      "id": "bt-5003",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-09-19",
+      "amount": -180,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Ledgerline subscription, card",
+      "ledger_account": {
+        "id": "acc-7500"
+      },
+      "updated_at": "2026-09-19T03:00:00Z"
+    },
+    {
+      "id": "bt-5004",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-09-30",
+      "amount": 60000,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Transfer from reserve account",
+      "updated_at": "2026-09-30T09:00:00Z"
+    },
+    {
+      "id": "bt-5005",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-10-06",
+      "amount": 18000,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Northgate Analytics, SI-3001",
+      "contact": {
+        "id": "con-2001"
+      },
+      "updated_at": "2026-10-06T16:40:00Z"
+    },
+    {
+      "id": "bt-5006",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-10-23",
+      "amount": 3500,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Tolliver & Reed LLP, part payment SI-3003",
+      "contact": {
+        "id": "con-2003"
+      },
+      "updated_at": "2026-10-23T14:02:00Z"
+    },
+    {
+      "id": "bt-5007",
+      "bank_account": {
+        "id": "acc-1200"
+      },
+      "date": "2026-10-28",
+      "amount": -4500,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Contractor, design sprint",
+      "ledger_account": {
+        "id": "acc-5000"
+      },
+      "updated_at": "2026-10-28T16:10:00Z"
+    },
+    {
+      "id": "bt-5008",
+      "bank_account": {
+        "id": "acc-1210"
+      },
+      "date": "2026-09-08",
+      "amount": 250000,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Deposit from investment account",
+      "updated_at": "2026-09-08T11:30:00Z"
+    },
+    {
+      "id": "bt-5009",
+      "bank_account": {
+        "id": "acc-1210"
+      },
+      "date": "2026-09-30",
+      "amount": -60000,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Transfer to operating account",
+      "updated_at": "2026-09-30T09:00:00Z"
+    },
+    {
+      "id": "bt-5010",
+      "bank_account": {
+        "id": "acc-1210"
+      },
+      "date": "2026-10-26",
+      "amount": 95,
+      "currency": {
+        "id": "USD"
+      },
+      "description": "Interest, October",
+      "updated_at": "2026-10-26T02:00:00Z"
+    }
+  ]
+}
