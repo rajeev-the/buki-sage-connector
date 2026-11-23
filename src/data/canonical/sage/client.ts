@@ -9,7 +9,7 @@
  * - Returns raw wire shapes only; canonical transformation lives in normalize.ts.
  */
 
-import { getValidAccessToken, loadTokens, refreshTokens, type SageOAuthConfig, DEFAULT_TOKEN_FILE } from "./auth";
+import { getValidAccessToken, loadTokenRecord, loadTokens, refreshTokens, type SageOAuthConfig, DEFAULT_TOKEN_FILE } from "./auth";
 import type {
   SageBankAccount,
   SageBankTransfer,
@@ -60,7 +60,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): SageConfig 
   const clientSecret = env.SAGE_CLIENT_SECRET;
   const baseUrl = (env.SAGE_BASE_URL ?? "https://api.accounting.sage.com/v3.1").replace(/\/+$/, "");
   const oauthUrl = env.SAGE_OAUTH_URL ?? "https://oauth.accounting.sage.com/token";
-  const callbackUrl = env.SAGE_CALLBACK_URL ?? "http://localhost:3000/api/sage/callback";
+  const callbackUrl = env.SAGE_REDIRECT_URI ?? env.SAGE_CALLBACK_URL ?? "http://localhost:3000/api/sage/callback";
   const businessId = env.SAGE_BUSINESS_ID?.trim() || undefined;
   const tokenPath = env.SAGE_TOKEN_PATH || DEFAULT_TOKEN_FILE;
   const retryBaseDelayMs = env.SAGE_RETRY_BASE_DELAY_MS !== undefined ? Number(env.SAGE_RETRY_BASE_DELAY_MS) : undefined;
@@ -82,6 +82,8 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): SageConfig 
 }
 
 export class SageClient {
+  private resolvedBusinessId?: string;
+
   constructor(private readonly config: SageConfig) {}
 
   private async getAccessToken(): Promise<string> {
@@ -98,6 +100,21 @@ export class SageClient {
     }
   }
 
+  private async getBusinessId(): Promise<string | undefined> {
+    if (this.config.businessId) return this.config.businessId;
+    if (this.resolvedBusinessId) return this.resolvedBusinessId;
+    try {
+      const stored = await loadTokenRecord(this.config.tokenPath);
+      if (stored?.businessId) {
+        this.resolvedBusinessId = stored.businessId;
+        return this.resolvedBusinessId;
+      }
+    } catch {
+      // ignore
+    }
+    return undefined;
+  }
+
   private resolveUrl(pathOrUrl: string, query?: Record<string, string>): string {
     const isFullUrl = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://");
     const u = isFullUrl ? new URL(pathOrUrl) : new URL(`${this.config.baseUrl}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`);
@@ -111,6 +128,7 @@ export class SageClient {
     const url = this.resolveUrl(pathOrUrl, query);
     let refreshedOn401 = false;
     const maxRetries = this.config.maxRetries ?? MAX_RETRIES;
+    const businessId = await this.getBusinessId();
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       let token = await this.getAccessToken();
@@ -120,8 +138,8 @@ export class SageClient {
         Accept: "application/json",
       };
 
-      if (this.config.businessId && !url.includes("/businesses")) {
-        headers["X-Business"] = this.config.businessId;
+      if (businessId && !url.includes("/businesses")) {
+        headers["X-Business"] = businessId;
       }
 
       let res: Response;
