@@ -257,27 +257,48 @@ async function run(): Promise<void> {
   });
 
   server.listen(port, () => {
-    // Also listen on stdin for manual input
+    console.log("👉 A browser window should have opened automatically.");
+    console.log("   Log in to Sage and click 'Allow' / 'Authorize' to link your trial business.");
+    console.log("   Once authorized, Sage will redirect to localhost:3000 and complete automatically.\n");
+
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question("Paste callback URL or authorization code here (or press Enter to wait): ", async (answer) => {
-      rl.close();
-      const trimmed = answer.trim();
-      if (!trimmed) return;
+    const askManual = (): void => {
+      rl.question(
+        "Paste the FULL redirect URL (with '?code=...') or authorization code (or press Enter to wait): ",
+        async (answer) => {
+          const trimmed = answer.trim();
+          if (!trimmed) {
+            console.log("⏳ Still waiting for browser redirect callback...\n");
+            askManual();
+            return;
+          }
 
-      let code = trimmed;
-      if (trimmed.includes("code=")) {
-        try {
-          const u = new URL(trimmed.startsWith("http") ? trimmed : `http://localhost?${trimmed}`);
-          code = u.searchParams.get("code") ?? trimmed;
-        } catch {
-          // ignore
-        }
-      }
+          let code = trimmed;
+          if (trimmed.includes("code=")) {
+            try {
+              const u = new URL(trimmed.startsWith("http") ? trimmed : `http://localhost?${trimmed}`);
+              code = u.searchParams.get("code") ?? trimmed;
+            } catch {
+              // ignore
+            }
+          } else if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            console.error("\n❌ The URL you pasted does not contain an authorization code (?code=...).");
+            console.error("Please complete the authorization in your browser first.");
+            console.error("Once authorized, Sage redirects to a URL like: http://localhost:3000/api/sage/callback?code=abc123xyz&state=...\n");
+            console.error("Copy that ENTIRE URL from your browser's address bar and paste it here, or just let the local server catch it automatically.\n");
+            askManual();
+            return;
+          }
 
-      server.close();
-      await finishAuth(code);
-      process.exit(0);
-    });
+          rl.close();
+          server.close();
+          await finishAuth(code);
+          process.exit(0);
+        },
+      );
+    };
+
+    askManual();
   });
 }
 
