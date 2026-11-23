@@ -17,6 +17,7 @@
 import { exec } from "node:child_process";
 import { createServer } from "node:http";
 import * as readline from "node:readline";
+import { loadDotEnv } from "../../../../scripts/env.mjs";
 import {
   buildAuthorizationUrl,
   createOAuthState,
@@ -28,6 +29,8 @@ import {
   type SageTokenRecord,
 } from "./auth";
 import { configFromEnv } from "./client";
+
+loadDotEnv();
 
 function openBrowser(url: string): void {
   const platform = process.platform;
