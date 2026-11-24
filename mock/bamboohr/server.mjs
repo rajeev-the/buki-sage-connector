@@ -62,6 +62,19 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const log = (status) => console.log(`${req.method} ${url.pathname}${url.search} -> ${status}`);
 
+  // Public health check and root landing page (open, no auth required)
+  if (url.pathname === "/" || url.pathname === "/health" || url.pathname === "/status") {
+    log(200);
+    return send(res, 200, {
+      status: "ok",
+      service: "buki-sage-connector",
+      health: "ok",
+      hr: "bamboohr",
+      finance: "sage",
+      message: "Buki Sage Connector is live and healthy."
+    });
+  }
+
   if (!authorized(req)) {
     log(401);
     return send(res, 401, { error: "unauthorized", detail: "Basic auth with the API key as the username is required." }, {

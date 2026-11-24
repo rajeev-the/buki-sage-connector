@@ -77,6 +77,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Public health check and root landing page (open, no auth required)
+  if (url.pathname === "/" || url.pathname === "/health" || url.pathname === "/status") {
+    log(200);
+    return send(res, 200, {
+      status: "ok",
+      service: "buki-sage-connector",
+      health: "ok",
+      finance: "sage",
+      message: "Buki Sage Accounting API is live and healthy."
+    });
+  }
+
   // 2. Bearer auth check for API routes
   const authHeader = req.headers.authorization || "";
   if (!authHeader.startsWith("Bearer ")) {
