@@ -4,39 +4,18 @@ This document provides visual diagrams and architectural deep-dives for the Sage
 
 ---
 
-## 1. Connector Architecture (What We Built)
+## 1. Visual End-to-End Flow (Auth ➔ Sync ➔ Store ➔ Answer Question)
 
-This diagram focuses directly on the connector components and code modules we implemented inside `src/data/canonical/sage/` and their integration seams with Buki's `FinanceProvider` contract:
+A clean, text-free visual pipeline tracing data from initial authorization through incremental synchronization, canonical normalization, atomic storage, and downstream question answering:
 
-![Sage Connector Architecture](./images/01-system-architecture.png)
+![Visual End-to-End Flow](./images/01-system-architecture.png)
 
-### The 4 Built Submodules:
+### The 4 Stages of the Pipeline:
 
-1. **Auth & Token Engine (`src/data/canonical/sage/auth.ts`, `authScript.ts`)**:
-   - `npm run sage:auth` interactive CLI with local HTTP callback listener on port 3000.
-   - Cryptographic state parameter CSRF verification & multi-business selection.
-   - Proactive 60-second expiration renewal buffer with `refreshPromise` single-flight mutex lock.
-   - Atomic token file storage using temporary file rename with POSIX `0o600` permissions.
-   - Cloud environment auto-seeding from `SAGE_ACCESS_TOKEN` and `SAGE_REFRESH_TOKEN`.
-
-2. **Resilient API Client (`src/data/canonical/sage/client.ts`, `raw/types.ts`)**:
-   - Strict 10-second `AbortSignal.timeout(10_000)` on all network calls.
-   - HTTP 429 rate limiter handling with `Retry-After` header inspection.
-   - Transient 5xx retry with exponential backoff and randomized jitter.
-   - Mid-flight 401 token invalidation & single-retry auto-recovery.
-   - Generic `$next` pagination traverser (`listAll<T>`) for all Sage v3.1 envelopes.
-
-3. **Pure Normalization Engine (`src/data/canonical/sage/normalize.ts`)**:
-   - Enforces the strict **Absent-Not-Default Rule**: missing properties (`due_date`, `email`) remain `undefined` (never defaulted to `""`, `0`, or `null`).
-   - **Net vs. VAT Separation**: `InvoiceLine.net` receives pre-tax `net_amount` for true expense analytics; `Invoice.total` & `outstanding` preserve gross cash obligations.
-   - Invariant guarantees: void and paid invoices have `outstanding: 0`, and `outstanding <= total`.
-   - Four pure transformers: `normalizeLedgerAccount`, `normalizeContact`, `normalizeInvoice`, and `normalizeBankTransaction`.
-
-4. **Provider Seam & Mock Testing (`src/data/canonical/sage/provider.ts`, `mock/sage/`)**:
-   - `SageFinanceProvider` implementing the canonical `FinanceProvider` contract: `health()` and `sync(options)`.
-   - Registered at the provider seam in `src/data/canonical/providers/index.ts`.
-   - Complete offline high-fidelity Sage Accounting v3.1 mock server (`mock/sage/server.mjs`) on port 4020 for deterministic local and cloud testing.
-   - Unauthenticated `/health` and `/` endpoints answering HTTP 200 for deployment verification.
+1. **Stage 1 — Authentication:** `OAuth 2.0 PKCE` ➔ `Sage Consent Portal` ➔ `Proactive Mutex Lock` (60s buffer) ➔ `.data/sage-tokens.json` (`0600`).
+2. **Stage 2 — Sync & Ingestion:** `Watermark Trigger` (`since`) ➔ `Sage API v3.1 / Mock` ➔ `Resilient Client` (10s timeout, 429 backoff) ➔ `$next Envelope Traversal`.
+3. **Stage 3 — Normalize & Store:** `Absent-Not-Default Rule` ➔ `Net vs VAT Pre-tax Line Logic` ➔ `Tri-State Diff` (`added`, `changed`, `removed`) ➔ `.data/store.json` (Atomic snapshot).
+4. **Stage 4 — Answer Question:** `User Question` ("Who owes us money?") ➔ `Brief Engine` (`answer.ts`) ➔ `Honest Exclusion` (citations for missing dates) ➔ `Cited Answer` ($12,000 overdue across 4 clients).
 
 ---
 
