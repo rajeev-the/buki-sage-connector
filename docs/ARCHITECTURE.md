@@ -1,31 +1,42 @@
-# Buki Sage Connector Architecture & Visual Guides
+lik# Buki Sage Connector Architecture & Visual Guides
 
 This document provides visual diagrams and architectural deep-dives for the Sage Accounting integration into Buki.
 
 ---
 
-## 1. System Architecture
+## 1. Connector Architecture (What We Built)
 
-The connector bridges external accounting data from Sage Accounting API v3.1 (or local mock for deterministic offline execution) into Buki's canonical records, which feed the Brief engine and Finance module.
+This diagram focuses directly on the connector components and code modules we implemented inside `src/data/canonical/sage/` and their integration seams with Buki's `FinanceProvider` contract:
 
-![System Architecture](./images/01-system-architecture.png)
+![Sage Connector Architecture](./images/01-system-architecture.png)
 
-### Key Architectural Layers:
+### The 4 Built Submodules:
 
-1. **Transport & Resilience Layer (`src/data/canonical/sage/client.ts`)**:
-   - Strict 10-second request timeout (`AbortSignal.timeout(10_000)`).
-   - HTTP 429 Rate Limit backoff parsing the `Retry-After` header.
-   - Transient 5xx retries with exponential backoff and jitter.
-   - Automatic envelope traversal following `$next` until exhausted.
+1. **Auth & Token Engine (`src/data/canonical/sage/auth.ts`, `authScript.ts`)**:
+   - `npm run sage:auth` interactive CLI with local HTTP callback listener on port 3000.
+   - Cryptographic state parameter CSRF verification & multi-business selection.
+   - Proactive 60-second expiration renewal buffer with `refreshPromise` single-flight mutex lock.
+   - Atomic token file storage using temporary file rename with POSIX `0o600` permissions.
+   - Cloud environment auto-seeding from `SAGE_ACCESS_TOKEN` and `SAGE_REFRESH_TOKEN`.
 
-2. **Pure Normalization & Canonical Invariants (`src/data/canonical/sage/normalize.ts`)**:
-   - **Absent-Not-Default Rule:** Any field omitted by Sage (e.g. invoice `due_date`, contact `email`) remains `undefined` and is never converted to `""`, `0`, or `null`.
-   - **Net vs. VAT Separation:** Pre-tax expenses/revenues are mapped to `InvoiceLine.net` so that category spend questions accurately represent economic costs. Gross amounts are mapped to `Invoice.total` and `Invoice.outstanding` for accurate cash and debtor calculations.
-   - **Canonical Types:** Normalizes into `LedgerAccount`, `Party`, `Invoice`, and `BankTransaction`.
+2. **Resilient API Client (`src/data/canonical/sage/client.ts`, `raw/types.ts`)**:
+   - Strict 10-second `AbortSignal.timeout(10_000)` on all network calls.
+   - HTTP 429 rate limiter handling with `Retry-After` header inspection.
+   - Transient 5xx retry with exponential backoff and randomized jitter.
+   - Mid-flight 401 token invalidation & single-retry auto-recovery.
+   - Generic `$next` pagination traverser (`listAll<T>`) for all Sage v3.1 envelopes.
 
-3. **Storage & Downstream Serving (`src/data/canonical/store.ts`, `src/lib/brief/answer.ts`)**:
-   - Atomic file persistence: writes to temporary file then atomically renames to `.data/store.json`.
-   - Downstream Brief engine (`npm run ask -- "<question>"`) and Finance module (`npm run show -- finance`) query canonical data with timestamped audit citations.
+3. **Pure Normalization Engine (`src/data/canonical/sage/normalize.ts`)**:
+   - Enforces the strict **Absent-Not-Default Rule**: missing properties (`due_date`, `email`) remain `undefined` (never defaulted to `""`, `0`, or `null`).
+   - **Net vs. VAT Separation**: `InvoiceLine.net` receives pre-tax `net_amount` for true expense analytics; `Invoice.total` & `outstanding` preserve gross cash obligations.
+   - Invariant guarantees: void and paid invoices have `outstanding: 0`, and `outstanding <= total`.
+   - Four pure transformers: `normalizeLedgerAccount`, `normalizeContact`, `normalizeInvoice`, and `normalizeBankTransaction`.
+
+4. **Provider Seam & Mock Testing (`src/data/canonical/sage/provider.ts`, `mock/sage/`)**:
+   - `SageFinanceProvider` implementing the canonical `FinanceProvider` contract: `health()` and `sync(options)`.
+   - Registered at the provider seam in `src/data/canonical/providers/index.ts`.
+   - Complete offline high-fidelity Sage Accounting v3.1 mock server (`mock/sage/server.mjs`) on port 4020 for deterministic local and cloud testing.
+   - Unauthenticated `/health` and `/` endpoints answering HTTP 200 for deployment verification.
 
 ---
 
