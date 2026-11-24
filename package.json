@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "start": "node mock/bamboohr/server.mjs & node mock/sage/server.mjs & tsx src/cli.ts cron",
     "mock": "node mock/bamboohr/server.mjs",
     "mock:sage": "node mock/sage/server.mjs",
     "sage:auth": "tsx src/data/canonical/sage/authScript.ts",
