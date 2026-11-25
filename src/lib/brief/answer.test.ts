@@ -148,6 +148,7 @@ describe("answerBrief, finance", () => {
     expect(overdue.answer).toContain("1 invoice is overdue, $8,000 outstanding");
     expect(overdue.answer).toContain("Northwind Traders $8,000 due 2 Oct 2026");
     expect(overdue.answer).toContain("1 open invoice has no due date on file");
+    expect(answerBrief("how much do they have to pay us", financeStore, NOW).answer).toContain("1 invoice is overdue, $8,000 outstanding");
     expect(answerBrief("what did we spend on software last month", financeStore, NOW).answer).toContain("$1,250 was spent on Software subscriptions in September 2026");
     expect(answerBrief("biggest customers", financeStore, NOW).answer).toContain("1. Northwind Traders $20,000; 2. Contoso Ltd $5,500");
     expect(answerBrief("how much cash do we have", hrStore, NOW).answer).toBe(NO_FINANCE_SOURCE);

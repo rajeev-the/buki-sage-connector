@@ -324,7 +324,7 @@ const FINANCE_RULES: Rule<FinCtx>[] = [
     },
   },
   {
-    pattern: /^(?:who owes us(?: money)?|overdue invoices|what is overdue|what's overdue|overdue receivables|which invoices are overdue)$/,
+    pattern: /^(?:who owes us(?: money)?|how much do they have to pay us|how much they have to pay us|what do they have to pay us|how much do customers owe us|how much is owed to us|overdue invoices|what is overdue|what's overdue|overdue receivables|which invoices are overdue)$/,
     answer: (_m, ctx) => {
       if (!ctx.fin.invoices.length) {
         return { answer: `No invoices are on file from ${ctx.sourceLabel}, so there is nothing to call overdue.`, figures: [], cited: ctx.cited };
